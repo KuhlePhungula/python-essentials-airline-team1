@@ -63,6 +63,7 @@ def calculate_flight_revenue():
     pass
 
 
+# Validates whole number input within low and high, and reprompts on bad input
 def read_valid_number(prompt, low, high):
     while True:
         try:
@@ -70,9 +71,32 @@ def read_valid_number(prompt, low, high):
             if low <= number <= high:
                 return number
             else:
-                print("Please enter a number between", low, "and", high, ".")
+                print("Please enter a number between" + str(low) + "and" + str(high) + ".")
         except ValueError:
             print("Invalid input. Please enter a valid number.")
+
+
+# Checks for blank input an reprompts until something is typed in 
+def read_nonblank(prompt):
+    while True:
+        text = input(prompt).strip()
+        if text == "":
+            print("Input cannot be blank. Please try again.")
+        else:
+            return text
+
+
+# Checks for positive number input, used for prices entry, and reprompts on bad input
+def read_positive_number(prompt):
+    while True:
+        try:
+            value = float(input(prompt))
+            if value > 0:
+                return value
+            else:
+                print("Please enter a number greater than zero.")
+        except ValueError:
+            print("Invalid input. Please enter a valid input.")
 
 
 # main program
