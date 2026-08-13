@@ -23,9 +23,15 @@ def seat_counts():
     pass
 
 
-def register_passenger():
-    pass
-
+# Registers new passenger with automatic ID and adds them to the passengers dictionary
+def register_passenger(passengers, next_passenger_number):
+    name = read_nonblank("Enter passenger name: ")
+    passenger_id = "P" + str(next_passenger_number)
+    passengers[passenger_id] = {"name": name}
+    next_passenger_number += 1
+    print("Registered", passenger_id, ":", name)
+    return passengers
+    
 
 def book_seat():
     pass
