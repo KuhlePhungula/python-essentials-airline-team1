@@ -63,8 +63,16 @@ def calculate_flight_revenue():
     pass
 
 
-def read_valid_number():
-    pass
+def read_valid_number(prompt, low, high):
+    while True:
+        try:
+            number = int(input(prompt))
+            if low <= number <= high:
+                return number
+            else:
+                print("Please enter a number between", low, "and", high, ".")
+        except ValueError:
+            print("Invalid input. Please enter a valid number.")
 
 
 # main program
@@ -108,7 +116,6 @@ while True:
     elif choice == 9:
         print("Exiting SKYLINK. Goodbye.")
         break
-    else:
-        print("Invalid input. Please choose option (1-9)")
+    
 
 
