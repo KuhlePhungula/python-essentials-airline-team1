@@ -7,8 +7,32 @@
 
 
 
-def add_flight():
-    pass
+def add_flight(flights, next_flight_number):
+    origin = read_nonblank("Origin: ")
+    destination = read_nonblank("Destination: ")
+    price = read_positive_number("Price: R")
+    rows = read_valid_number("Number of rows (1-9): ", 1, 9)
+    seats_per_row = read_valid_number("Seats per row (1-6): ", 1, 6)
+
+    seat_map = []
+    for row_index in range(rows):
+        row = []
+        for col_index in range(seats_per_row):
+            row.append(" ")
+            seat_map.append(row)
+        
+
+    flight_id = "F" + str(next_flight_number)
+    flights[flight_id] = {
+        "origin": origin,
+        "dest": destination,
+        "price": price,
+        "seats": seat_map,
+        "waitlist": []
+    }
+
+    print("Added", flight_id, ":", origin, "->", destination, "|", "R", format(price, ".2f"), "|", str(rows, "rows x", str(seats_per_row), "seats"))
+    return next_flight_number + 1
 
 
 def seat_label_to_indexes():
