@@ -245,9 +245,43 @@ def cancel_booking(flights, passengers, bookings, next_booking_number):
 def change_seat():
     pass
 
+# Adds a passenger to a flight's waitlist
+def join_waitlist(flights, passengers, flight_id, passenger_id):
 
-def join_waitlist():
-    pass
+    # Check that the passenger exists
+    if passenger_id not in passengers:
+        print("Passenger does not exist.")
+        return
+
+    # Check that the flight exists
+    if flight_id not in flights:
+        print("Flight does not exist.")
+        return
+
+    # Get the flight
+    flight = flights[flight_id]
+
+    # Check if the passenger is already on the waitlist
+    if passenger_id in flight["waitlist"]:
+        print("Passenger is already on the waitlist.")
+        return
+
+    # Add the passenger to the end of the waitlist
+    flight["waitlist"].append(passenger_id)
+
+    # Calculate their position
+    position = len(flight["waitlist"])
+
+    # Confirm the waitlist position
+    print(
+        passenger_id,
+        "added to the",
+        flight_id,
+        "waitlist at position",
+        position
+    )
+
+    return position
 
 
 def promote_from_waitlist():
