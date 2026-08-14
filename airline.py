@@ -159,8 +159,87 @@ def book_seat(flights, passengers, bookings, next_booking_number):
     return bookings, next_booking_number
 
 
-def cancel_booking():
-    pass
+# Cancels an existing booking and promotes the first waitlisted passenger if needed
+def cancel_booking(flights, passengers, bookings, next_booking_number):
+
+    # Ask for the booking ID
+    booking_id = input("Booking ID: ").strip().upper()
+
+    # Check whether the booking exists
+    if booking_id not in bookings:
+        print("Booking does not exist.")
+        return bookings, next_booking_number
+
+    # Get the booking information
+    booking = bookings[booking_id]
+
+    passenger_id = booking["passenger"]
+    flight_id = booking["flight"]
+    seat_label = booking["seat"]
+
+    # Get the flight
+    flight = flights[flight_id]
+
+    # Convert the seat label into indexes
+    row_index, column_index = seat_label_to_indexes(
+        seat_label,
+        len(flight["seats"]),
+        len(flight["seats"][0])
+    )
+
+    # Free the seat
+    flight["seats"][row_index][column_index] = " "
+
+    # Remove the booking
+    del bookings[booking_id]
+
+    print(
+        "Cancelled",
+        booking_id,
+        ":",
+        passenger_id,
+        "from",
+        flight_id,
+        "seat",
+        seat_label
+    )
+
+    # Check whether anyone is waiting for this flight
+    if len(flight["waitlist"]) > 0:
+
+        # Get the first passenger in the waitlist
+        waiting_passenger = flight["waitlist"][0]
+
+        # Remove that passenger from the waitlist
+        del flight["waitlist"][0]
+
+        # Create a new booking
+        new_booking_id = "BK" + str(next_booking_number)
+
+        bookings[new_booking_id] = {
+            "passenger": waiting_passenger,
+            "flight": flight_id,
+            "seat": seat_label
+        }
+
+        # Mark the freed seat as occupied again
+        flight["seats"][row_index][column_index] = "X"
+
+        # Increase the booking number
+        next_booking_number += 1
+
+        print(
+            "Promoted",
+            waiting_passenger,
+            "from waitlist to",
+            flight_id,
+            "seat",
+            seat_label,
+            "as",
+            new_booking_id
+        )
+
+    return bookings, next_booking_number
 
 
 def change_seat():
