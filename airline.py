@@ -284,8 +284,67 @@ def join_waitlist(flights, passengers, flight_id, passenger_id):
     return position
 
 
-def promote_from_waitlist():
-    pass
+# Promotes the first passenger from the waitlist into a newly available seat
+def promote_from_waitlist( flights, passengers, bookings, flight_id, seat_label, next_booking_number ):
+
+    # Check that the flight exists
+    if flight_id not in flights:
+        print("Flight does not exist.")
+        return bookings, next_booking_number
+
+    # Get the flight
+    flight = flights[flight_id]
+
+    # Check whether there is anyone waiting
+    if len(flight["waitlist"]) == 0:
+        return bookings, next_booking_number
+
+    # Get the first passenger in the waitlist
+    passenger_id = flight["waitlist"][0]
+
+    # Remove the passenger from the waitlist
+    del flight["waitlist"][0]
+
+    # Convert the seat label into indexes
+    row_index, column_index = seat_label_to_indexes(
+        seat_label,
+        len(flight["seats"]),
+        len(flight["seats"][0])
+    )
+
+    # Mark the seat as occupied
+    flight["seats"][row_index][column_index] = "X"
+
+    # Create a new booking ID
+    booking_id = "BK" + str(next_booking_number)
+
+    # Add the new booking
+    bookings[booking_id] = {
+        "passenger": passenger_id,
+        "flight": flight_id,
+        "seat": seat_label
+    }
+
+    # Increase the booking number
+    next_booking_number += 1
+
+    # Get the passenger's name
+    passenger_name = passengers[passenger_id]["name"]
+
+    # Print the promotion confirmation
+    print(
+        "Promoted",
+        passenger_id,
+        "-",
+        passenger_name,
+        "from waitlist to",
+        flight_id,
+        seat_label,
+        "as",
+        booking_id
+    )
+
+    return bookings, next_booking_number
 
 
 def flight_manifest():
