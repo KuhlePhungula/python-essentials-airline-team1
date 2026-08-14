@@ -6,7 +6,7 @@
 # - Uwaiz Lovell
 
 
-
+# adds new flight details and builds a seat map
 def add_flight(flights, next_flight_number):
     origin = read_nonblank("Origin: ")
     destination = read_nonblank("Destination: ")
@@ -43,8 +43,17 @@ def render_seat_map():
     pass
 
 
-def seat_counts():
-    pass
+# counts how many seats are taken compared to total seats on a flight's seat map
+def seat_counts(seats):
+    total = 0
+    taken = 0
+
+    for row in seats:
+        for block in row:
+            total += 1
+            if block == "X":
+                taken += 1
+    return taken, total
 
 
 # Registers new passenger with automatic ID and adds them to the passengers dictionary
