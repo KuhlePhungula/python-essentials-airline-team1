@@ -154,8 +154,11 @@ def find_passenger_booking():
     pass
 
 
-def calculate_flight_revenue():
-    pass
+# returns a single flight's revenue
+def calculate_flight_revenue(flight):
+    taken, total = seat_counts(flight["seats"])
+    revenue = taken * flight["price"]
+    return revenue, taken, total 
 
 
 # Validates whole number input within low and high, and reprompts on bad input
