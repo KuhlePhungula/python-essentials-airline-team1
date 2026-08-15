@@ -513,8 +513,79 @@ def flight_manifest(flights, passengers, bookings):
     return
 
 
-def revenue_report():
-    pass
+# Displays revenue and occupancy information for every flight
+def revenue_report(flights, bookings):
+
+    print("\n--- Revenue Report ---")
+
+    total_revenue = 0
+    fullest_flight = None
+    highest_occupancy = -1
+    total_waitlisted = 0
+
+    # Go through every flight
+    for flight_id in flights:
+
+        flight = flights[flight_id]
+
+        # Count seats
+        taken, total = seat_counts(flight["seats"])
+
+        # Calculate occupancy percentage
+        if total > 0:
+            occupancy = (taken / total) * 100
+        else:
+            occupancy = 0
+
+        # Calculate revenue for this flight
+        revenue = calculate_flight_revenue(
+            bookings,
+            flight_id,
+            flight["price"]
+        )
+
+        # Count people waiting
+        waitlisted = len(flight["waitlist"])
+
+        # Add to academy totals
+        total_revenue += revenue
+        total_waitlisted += waitlisted
+
+        # Check whether this is the fullest flight
+        if occupancy > highest_occupancy:
+            highest_occupancy = occupancy
+            fullest_flight = flight_id
+
+        # Display the flight's information
+        print(
+            flight_id,
+            "|",
+            flight["origin"],
+            "->",
+            flight["dest"],
+            "|",
+            str(taken) + "/" + str(total),
+            "|",
+            format(occupancy, ".1f") + "%",
+            "|",
+            "R" + format(revenue, ".2f")
+        )
+
+    # Display academy totals
+    print("\n--- Academy Totals ---")
+    print(
+        "Total revenue: R" + format(total_revenue, ".2f")
+    )
+    print(
+        "Fullest flight:",
+        fullest_flight
+    )
+    print(
+        "Total waitlisted:",
+        total_waitlisted
+    )
+
+    return
 
 
 def find_passenger_booking():
