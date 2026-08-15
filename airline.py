@@ -430,8 +430,87 @@ def promote_from_waitlist( flights, passengers, bookings, flight_id, seat_label,
     return bookings, next_booking_number
 
 
-def flight_manifest():
-    pass
+# Displays all booked passengers for a flight in seat order
+def flight_manifest(flights, passengers, bookings):
+
+    # Ask for the flight ID
+    flight_id = input("Flight ID: ").strip().upper()
+
+    # Check that the flight exists
+    if flight_id not in flights:
+        print("Flight does not exist.")
+        return
+
+    # Get the selected flight
+    flight = flights[flight_id]
+
+    # Keep track of bookings for this flight
+    flight_bookings = []
+
+    # Find all bookings belonging to this flight
+    for booking_id in bookings:
+        booking = bookings[booking_id]
+
+        if booking["flight"] == flight_id:
+            flight_bookings.append(booking_id)
+
+    # Display the manifest heading
+    print("\n--- Flight Manifest ---")
+    print(
+        flight_id,
+        "|",
+        flight["origin"],
+        "->",
+        flight["dest"]
+    )
+
+    # Check whether there are any bookings
+    if len(flight_bookings) == 0:
+        print("No passengers booked.")
+    else:
+
+        # Display each booking
+        for booking_id in flight_bookings:
+
+            booking = bookings[booking_id]
+            passenger_id = booking["passenger"]
+            seat_label = booking["seat"]
+
+            passenger_name = passengers[passenger_id]["name"]
+
+            print(
+                booking_id,
+                "|",
+                passenger_id,
+                "|",
+                passenger_name,
+                "|",
+                seat_label
+            )
+
+    # Display the waitlist
+    print("Waitlist:")
+
+    if len(flight["waitlist"]) == 0:
+        print("(waitlist empty)")
+    else:
+        position = 1
+
+        for passenger_id in flight["waitlist"]:
+
+            passenger_name = passengers[passenger_id]["name"]
+
+            print(
+                position,
+                "|",
+                passenger_id,
+                "|",
+                passenger_name
+            )
+
+            position += 1
+
+    return
 
 
 def revenue_report():
