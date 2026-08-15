@@ -69,8 +69,34 @@ def seat_label_to_indexes(seat_label):
     return row_index, col_index
 
 
-def render_seat_map():
-    pass
+def render_seat_map(flights):
+    flight_id = read_nonblank("Flight ID: ").upper()
+    if flight_id not in flights:
+        print("Flight", flight_id, "not found.")
+        return False
+
+    flight = flights[flight_id]
+    seats = flights["seats"]
+    rows = len(seats)
+    seats_per_row = len(seats[0]) if rows > 0 else 0
+
+    print("\nFlight", flight_id, ":", flight["origin"], "->", flight["dest"], "|", "R", format(flight["price"], ".2f"), "|", str(rows, "rows x", str(seats_per_row), "seats"))
+
+    header = "   "
+    for col_index in range(seats_per_row):
+        header += "  " + seat_letters[col_index] + "  "
+        print(header)
+
+    for row_index in range(rows):
+        line = str(row_index + 1) + "  "
+        for col_index in range(seats_per_row):
+            line += "[" + seats[row_index][col_index] + "]"
+        print(line)
+
+    taken, total = seat_counts(seats)
+    percent = (taken / total * 100) if total > 0 else 0.0
+    print("Seats taken: ", str(taken), "of", str(total) + "(", format(percent, ".1f"), "% full)")
+    return True
 
 
 # counts how many seats are taken compared to total seats on a flight's seat map
