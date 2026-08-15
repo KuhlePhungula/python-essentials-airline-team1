@@ -8,8 +8,8 @@
 
 # adds new flight details and builds a seat map
 def add_flight(flights, next_flight_number):
-    origin = read_nonblank("Origin: ")
-    destination = read_nonblank("Destination: ")
+    origin = read_nonblank("Origin: ").upper()
+    destination = read_nonblank("Destination: ").upper()
     price = read_positive_number("Price: R")
     rows = read_valid_number("Number of rows (1-9): ", 1, 9)
     seats_per_row = read_valid_number("Seats per row (1-6): ", 1, 6)
@@ -35,8 +35,38 @@ def add_flight(flights, next_flight_number):
     return next_flight_number + 1
 
 
-def seat_label_to_indexes():
-    pass
+# converts seat labels to indexes and return (row_index, col_index)
+def seat_label_to_indexes(seat_label):
+    if seat_label is None:
+        return None, None
+
+    seat_label = seat_label.strip().upper()
+    if seat_label == "":
+        return None, None
+
+    row_block = ""
+    col_block = ""
+    for block in seat_label:
+        if block.isdigit():
+            if col_block != "":
+                return None, None
+            row_block += block
+        elif block.isalpha():
+            col_block += block
+        else: 
+            return None, None
+
+    if row_block == "" or len(col_block) != 1:
+        return None, None
+    if col_block not in seat_letters:
+        return None, None
+
+    row_index = int(row_block) - 1
+    col_index = seat_letters.index(col_block)
+    if row_block < 0:
+        return None, None
+
+    return row_index, col_index
 
 
 def render_seat_map():
@@ -145,6 +175,7 @@ bookings = {}
 next_passenger_number = 1
 next_flight_number = 1 
 next_booking_number = 1
+seat_letters = "ABCDEF"
 
 while True:
     print("\n===== SKYLINK RESERVATIONS =====")
