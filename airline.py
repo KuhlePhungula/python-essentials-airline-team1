@@ -242,8 +242,91 @@ def cancel_booking(flights, passengers, bookings, next_booking_number):
     return bookings, next_booking_number
 
 
-def change_seat():
-    pass
+# Changes a passenger's existing seat on a flight
+def change_seat(flights, passengers, bookings):
+
+    # Ask for the booking ID
+    booking_id = input("Booking ID: ").strip().upper()
+
+    # Check whether the booking exists
+    if booking_id not in bookings:
+        print("Booking does not exist.")
+        return
+
+    # Get the booking details
+    booking = bookings[booking_id]
+
+    passenger_id = booking["passenger"]
+    flight_id = booking["flight"]
+    old_seat = booking["seat"]
+
+    # Get the flight
+    flight = flights[flight_id]
+
+    # Ask for the new seat
+    new_seat = input("New seat (for example 2C): ").strip().upper()
+
+    # Check the seat format
+    if len(new_seat) != 2:
+        print("Invalid seat format.")
+        return
+
+    if not new_seat[0].isdigit() or not new_seat[1].isalpha():
+        print("Invalid seat format.")
+        return
+
+    # Convert the new seat label into indexes
+    new_row, new_column = seat_label_to_indexes(
+        new_seat,
+        len(flight["seats"]),
+        len(flight["seats"][0])
+    )
+
+    # Check that the new seat exists
+    if new_row is None or new_column is None:
+        print("Seat is not available on this flight.")
+        return
+
+    # Check that the passenger isn't trying to choose their current seat
+    if new_seat == old_seat:
+        print("You are already booked in that seat.")
+        return
+
+    # Check whether the new seat is occupied
+    if flight["seats"][new_row][new_column] == "X":
+        print("Seat is already occupied.")
+        return
+
+    # Convert the old seat into indexes
+    old_row, old_column = seat_label_to_indexes(
+        old_seat,
+        len(flight["seats"]),
+        len(flight["seats"][0])
+    )
+
+    # Free the old seat
+    flight["seats"][old_row][old_column] = " "
+
+    # Occupy the new seat
+    flight["seats"][new_row][new_column] = "X"
+
+    # Update the booking
+    bookings[booking_id]["seat"] = new_seat
+
+    # Confirm the change
+    print(
+        "Changed",
+        booking_id,
+        ":",
+        passenger_id,
+        "from",
+        old_seat,
+        "to",
+        new_seat
+    )
+
+    return
+
 
 # Adds a passenger to a flight's waitlist
 def join_waitlist(flights, passengers, flight_id, passenger_id):
