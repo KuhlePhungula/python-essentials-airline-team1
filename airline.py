@@ -6,21 +6,110 @@
 # - Uwaiz Lovell
 
 
+# adds new flight details and builds a seat map
+def add_flight(flights, next_flight_number):
+    origin = read_nonblank("Origin: ").upper()
+    destination = read_nonblank("Destination: ").upper()
+    price = read_positive_number("Price: R")
+    rows = read_valid_number("Number of rows (1-9): ", 1, 9)
+    seats_per_row = read_valid_number("Seats per row (1-6): ", 1, 6)
 
-def add_flight():
-    pass
+    seat_map = []
+    for row_index in range(rows):
+        row = []
+        for col_index in range(seats_per_row):
+            row.append(" ")
+            seat_map.append(row)
+        
+
+    flight_id = "F" + str(next_flight_number)
+    flights[flight_id] = {
+        "origin": origin,
+        "dest": destination,
+        "price": price,
+        "seats": seat_map,
+        "waitlist": []
+    }
+
+    print("Added", flight_id, ":", origin, "->", destination, "|", "R", format(price, ".2f"), "|", str(rows, "rows x", str(seats_per_row), "seats"))
+    return next_flight_number + 1
 
 
-def seat_label_to_indexes():
-    pass
+# converts seat labels to indexes and return (row_index, col_index)
+def seat_label_to_indexes(seat_label):
+    if seat_label is None:
+        return None, None
+
+    seat_label = seat_label.strip().upper()
+    if seat_label == "":
+        return None, None
+
+    row_block = ""
+    col_block = ""
+    for block in seat_label:
+        if block.isdigit():
+            if col_block != "":
+                return None, None
+            row_block += block
+        elif block.isalpha():
+            col_block += block
+        else: 
+            return None, None
+
+    if row_block == "" or len(col_block) != 1:
+        return None, None
+    if col_block not in seat_letters:
+        return None, None
+
+    row_index = int(row_block) - 1
+    col_index = seat_letters.index(col_block)
+    if row_block < 0:
+        return None, None
+
+    return row_index, col_index
 
 
-def render_seat_map():
-    pass
+def render_seat_map(flights):
+    flight_id = read_nonblank("Flight ID: ").upper()
+    if flight_id not in flights:
+        print("Flight", flight_id, "not found.")
+        return False
+
+    flight = flights[flight_id]
+    seats = flights["seats"]
+    rows = len(seats)
+    seats_per_row = len(seats[0]) if rows > 0 else 0
+
+    print("\nFlight", flight_id, ":", flight["origin"], "->", flight["dest"], "|", "R", format(flight["price"], ".2f"), "|", str(rows, "rows x", str(seats_per_row), "seats"))
+
+    header = "   "
+    for col_index in range(seats_per_row):
+        header += "  " + seat_letters[col_index] + "  "
+        print(header)
+
+    for row_index in range(rows):
+        line = str(row_index + 1) + "  "
+        for col_index in range(seats_per_row):
+            line += "[" + seats[row_index][col_index] + "]"
+        print(line)
+
+    taken, total = seat_counts(seats)
+    percent = (taken / total * 100) if total > 0 else 0.0
+    print("Seats taken: ", str(taken), "of", str(total) + "(", format(percent, ".1f"), "% full)")
+    return True
 
 
-def seat_counts():
-    pass
+# counts how many seats are taken compared to total seats on a flight's seat map
+def seat_counts(seats):
+    total = 0
+    taken = 0
+
+    for row in seats:
+        for block in row:
+            total += 1
+            if block == "X":
+                taken += 1
+    return taken, total
 
 
 # Registers new passenger with automatic ID and adds them to the passengers dictionary
@@ -599,8 +688,11 @@ def find_passenger_booking(bookings, passenger_id, flight_id):
     return None
 
 
-def calculate_flight_revenue():
-    pass
+# returns a single flight's revenue
+def calculate_flight_revenue(flight):
+    taken, total = seat_counts(flight["seats"])
+    revenue = taken * flight["price"]
+    return revenue, taken, total 
 
 
 # Validates whole number input within low and high, and reprompts on bad input
@@ -646,6 +738,7 @@ bookings = {}
 next_passenger_number = 1
 next_flight_number = 1 
 next_booking_number = 1
+seat_letters = "ABCDEF"
 
 while True:
     print("\n===== SKYLINK RESERVATIONS =====")
