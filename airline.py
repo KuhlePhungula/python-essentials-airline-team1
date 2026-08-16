@@ -19,7 +19,7 @@ def add_flight(flights, next_flight_number):
         row = []
         for col_index in range(seats_per_row):
             row.append(" ")
-            seat_map.append(row)
+        seat_map.append(row)
         
 
     flight_id = "F" + str(next_flight_number)
@@ -31,7 +31,20 @@ def add_flight(flights, next_flight_number):
         "waitlist": []
     }
 
-    print("Added", flight_id, ":", origin, "->", destination, "|", "R", format(price, ".2f"), "|", str(rows, "rows x", str(seats_per_row), "seats"))
+    print(
+        "Added",
+        flight_id,
+        ":",
+        origin,
+        "->",
+        destination,
+        "|",
+        "R",
+        format(price, ".2f"),
+        "|",
+        str(rows) + " rows x " + str(seats_per_row) + " seats"
+    )
+
     return next_flight_number + 1
 
 
@@ -63,7 +76,7 @@ def seat_label_to_indexes(seat_label):
 
     row_index = int(row_block) - 1
     col_index = seat_letters.index(col_block)
-    if row_block < 0:
+    if row_index < 0:
         return None, None
 
     return row_index, col_index
@@ -76,16 +89,29 @@ def render_seat_map(flights):
         return False
 
     flight = flights[flight_id]
-    seats = flights["seats"]
+    seats = flight["seats"]
     rows = len(seats)
     seats_per_row = len(seats[0]) if rows > 0 else 0
 
-    print("\nFlight", flight_id, ":", flight["origin"], "->", flight["dest"], "|", "R", format(flight["price"], ".2f"), "|", str(rows, "rows x", str(seats_per_row), "seats"))
+    print(
+        "\nFlight",
+        flight_id,
+        ":",
+        flight["origin"],
+        "->",
+        flight["dest"],
+        "|",
+        "R",
+        format(flight["price"], ".2f"),
+        "|",
+        str(rows) + " rows x " + str(seats_per_row) + " seats"
+    )
 
     header = "   "
     for col_index in range(seats_per_row):
         header += "  " + seat_letters[col_index] + "  "
-        print(header)
+
+    print(header)
 
     for row_index in range(rows):
         line = str(row_index + 1) + "  "
@@ -119,7 +145,7 @@ def register_passenger(passengers, next_passenger_number):
     passengers[passenger_id] = {"name": name}
     next_passenger_number += 1
     print("Registered", passenger_id, ":", name)
-    return passengers
+    return passengers, next_passenger_number
     
 
 # Books a passenger into an available seat on a flight
@@ -144,6 +170,17 @@ def book_seat(flights, passengers, bookings, next_booking_number):
     # Get the selected flight
     flight = flights[flight_id]
 
+    # Check whether this passenger already has a booking on this flight
+    existing_booking = find_passenger_booking(
+        bookings,
+        passenger_id,
+        flight_id
+    )
+
+    if existing_booking is not None:
+        print("Passenger already has a booking on this flight.")
+        return bookings, next_booking_number
+
     # Count the seats on the flight
     taken, total = seat_counts(flight["seats"])
 
@@ -151,28 +188,18 @@ def book_seat(flights, passengers, bookings, next_booking_number):
     if taken == total:
         print("Flight", flight_id, "is FULL.")
 
-        # Ask if the passenger wants to join the waitlist
         answer = input(
             "Add " + passenger_id + " to the waitlist? (y/n): "
         ).strip().lower()
 
         if answer == "y":
-
-            # Check that the passenger is not already waiting
-            if passenger_id in flight["waitlist"]:
-                print(passenger_id, "is already on the waitlist.")
-            else:
-                flight["waitlist"].append(passenger_id)
-                position = len(flight["waitlist"])
-
-                print(
-                    passenger_id,
-                    "added to the",
-                    flight_id,
-                    "waitlist at position",
-                    position,
-                    "."
-                )
+            join_waitlist(
+                flights,
+                passengers,
+                bookings,
+                flight_id,
+                passenger_id
+            )
 
         return bookings, next_booking_number
 
@@ -189,31 +216,20 @@ def book_seat(flights, passengers, bookings, next_booking_number):
         return bookings, next_booking_number
 
     # Convert the seat label into list indexes
-    row_index, column_index = seat_label_to_indexes(
-        seat_label,
-        len(flight["seats"]),
-        len(flight["seats"][0])
-    )
+    row_index, column_index = seat_label_to_indexes(seat_label)
 
     # Check that the seat exists on this particular flight
     if row_index is None or column_index is None:
         print("Seat is not available on this flight.")
         return bookings, next_booking_number
 
+    if row_index >= len(flight["seats"]) or column_index >= len(flight["seats"][0]):
+        print("Seat is not available on this flight.")
+        return bookings, next_booking_number
+
     # Check whether the seat is already occupied
     if flight["seats"][row_index][column_index] == "X":
         print("Seat is already occupied.")
-        return bookings, next_booking_number
-
-    # Check whether this passenger already has a booking on this flight
-    existing_booking = find_passenger_booking(
-        bookings,
-        passenger_id,
-        flight_id
-    )
-
-    if existing_booking is not None:
-        print("Passenger already has a booking on this flight.")
         return bookings, next_booking_number
 
     # Mark the selected seat as occupied
@@ -266,15 +282,25 @@ def cancel_booking(flights, passengers, bookings, next_booking_number):
     flight_id = booking["flight"]
     seat_label = booking["seat"]
 
+    # Check that the flight still exists
+    if flight_id not in flights:
+        print("Flight does not exist.")
+        return bookings, next_booking_number
+
     # Get the flight
     flight = flights[flight_id]
 
     # Convert the seat label into indexes
-    row_index, column_index = seat_label_to_indexes(
-        seat_label,
-        len(flight["seats"]),
-        len(flight["seats"][0])
-    )
+    row_index, column_index = seat_label_to_indexes(seat_label) 
+
+    # Check that the seat is valid
+    if row_index is None or column_index is None:
+        print("Existing booking has an invalid seat.")
+        return bookings, next_booking_number
+
+    if row_index >= len(flight["seats"]) or column_index >= len(flight["seats"][0]):
+        print("Existing booking has an invalid seat.")
+        return bookings, next_booking_number
 
     # Free the seat
     flight["seats"][row_index][column_index] = " "
@@ -293,46 +319,23 @@ def cancel_booking(flights, passengers, bookings, next_booking_number):
         seat_label
     )
 
-    # Check whether anyone is waiting for this flight
+    
+    # Promote the first passenger from the waitlist if someone is waiting
     if len(flight["waitlist"]) > 0:
-
-        # Get the first passenger in the waitlist
-        waiting_passenger = flight["waitlist"][0]
-
-        # Remove that passenger from the waitlist
-        del flight["waitlist"][0]
-
-        # Create a new booking
-        new_booking_id = "BK" + str(next_booking_number)
-
-        bookings[new_booking_id] = {
-            "passenger": waiting_passenger,
-            "flight": flight_id,
-            "seat": seat_label
-        }
-
-        # Mark the freed seat as occupied again
-        flight["seats"][row_index][column_index] = "X"
-
-        # Increase the booking number
-        next_booking_number += 1
-
-        print(
-            "Promoted",
-            waiting_passenger,
-            "from waitlist to",
+        bookings, next_booking_number = promote_from_waitlist(
+            flights,
+            passengers,
+            bookings,
             flight_id,
-            "seat",
             seat_label,
-            "as",
-            new_booking_id
+            next_booking_number
         )
 
     return bookings, next_booking_number
 
 
 # Changes a passenger's existing seat on a flight
-def change_seat(flights, passengers, bookings):
+def change_seat(flights, bookings):
 
     # Ask for the booking ID
     booking_id = input("Booking ID: ").strip().upper()
@@ -348,6 +351,11 @@ def change_seat(flights, passengers, bookings):
     passenger_id = booking["passenger"]
     flight_id = booking["flight"]
     old_seat = booking["seat"]
+
+    # Check that the flight still exists
+    if flight_id not in flights:
+        print("Flight does not exist.")
+        return
 
     # Get the flight
     flight = flights[flight_id]
@@ -365,14 +373,14 @@ def change_seat(flights, passengers, bookings):
         return
 
     # Convert the new seat label into indexes
-    new_row, new_column = seat_label_to_indexes(
-        new_seat,
-        len(flight["seats"]),
-        len(flight["seats"][0])
-    )
+    new_row, new_column = seat_label_to_indexes(new_seat)
 
     # Check that the new seat exists
     if new_row is None or new_column is None:
+        print("Seat is not available on this flight.")
+        return
+
+    if new_row >= len(flight["seats"]) or new_column >= len(flight["seats"][0]):
         print("Seat is not available on this flight.")
         return
 
@@ -387,11 +395,16 @@ def change_seat(flights, passengers, bookings):
         return
 
     # Convert the old seat into indexes
-    old_row, old_column = seat_label_to_indexes(
-        old_seat,
-        len(flight["seats"]),
-        len(flight["seats"][0])
-    )
+    old_row, old_column = seat_label_to_indexes(old_seat)
+
+    # Check that the old seat still exists
+    if old_row is None or old_column is None:
+        print("Existing booking has an invalid seat.")
+        return
+
+    if old_row >= len(flight["seats"]) or old_column >= len(flight["seats"][0]):
+        print("Existing booking has an invalid seat.")
+        return
 
     # Free the old seat
     flight["seats"][old_row][old_column] = " "
@@ -418,7 +431,7 @@ def change_seat(flights, passengers, bookings):
 
 
 # Adds a passenger to a flight's waitlist
-def join_waitlist(flights, passengers, flight_id, passenger_id):
+def join_waitlist(flights, passengers, bookings, flight_id, passenger_id):
 
     # Check that the passenger exists
     if passenger_id not in passengers:
@@ -432,6 +445,17 @@ def join_waitlist(flights, passengers, flight_id, passenger_id):
 
     # Get the flight
     flight = flights[flight_id]
+
+    # Check if the passenger already has a booking on this flight
+    existing_booking = find_passenger_booking(
+        bookings,
+        passenger_id,
+        flight_id
+    )
+
+    if existing_booking is not None:
+        print("Passenger already has a booking on this flight.")
+        return
 
     # Check if the passenger is already on the waitlist
     if passenger_id in flight["waitlist"]:
@@ -474,15 +498,42 @@ def promote_from_waitlist( flights, passengers, bookings, flight_id, seat_label,
     # Get the first passenger in the waitlist
     passenger_id = flight["waitlist"][0]
 
-    # Remove the passenger from the waitlist
-    del flight["waitlist"][0]
+    # Check that the passenger still exists
+    if passenger_id not in passengers:
+        print("Passenger does not exist.")
+
+        # Remove the invalid passenger from the waitlist
+        del flight["waitlist"][0]
+        
+        return bookings, next_booking_number
+
+    # Check that the passenger does not already have a booking
+    existing_booking = find_passenger_booking(
+        bookings,
+        passenger_id,
+        flight_id
+    )
+
+    if existing_booking is not None:
+        print("Passenger already has a booking on this flight.")
+        return bookings, next_booking_number
 
     # Convert the seat label into indexes
-    row_index, column_index = seat_label_to_indexes(
-        seat_label,
-        len(flight["seats"]),
-        len(flight["seats"][0])
-    )
+    row_index, column_index = seat_label_to_indexes(seat_label)
+
+    # Check that the seat is valid
+    if row_index is None or column_index is None:
+        print("Seat is not available on this flight.")
+        return bookings, next_booking_number
+
+    if row_index >= len(flight["seats"]) or column_index >= len(flight["seats"][0]):
+        print("Seat is not available on this flight.")
+        return bookings, next_booking_number
+
+    # Check that the seat is free
+    if flight["seats"][row_index][column_index] == "X":
+        print("Seat is already occupied.")
+        return bookings, next_booking_number
 
     # Mark the seat as occupied
     flight["seats"][row_index][column_index] = "X"
@@ -496,6 +547,9 @@ def promote_from_waitlist( flights, passengers, bookings, flight_id, seat_label,
         "flight": flight_id,
         "seat": seat_label
     }
+
+    # Remove the passenger from the waitlist
+    del flight["waitlist"][0]
 
     # Increase the booking number
     next_booking_number += 1
@@ -543,6 +597,26 @@ def flight_manifest(flights, passengers, bookings):
         if booking["flight"] == flight_id:
             flight_bookings.append(booking_id)
 
+    # Sort bookings by seat row and then column
+    for i in range(len(flight_bookings)):
+        for j in range(i + 1, len(flight_bookings)):
+            seat_i = bookings[flight_bookings[i]]["seat"]
+            seat_j = bookings[flight_bookings[j]]["seat"]
+
+            row_i, column_i = seat_label_to_indexes(seat_i)
+            row_j, column_j = seat_label_to_indexes(seat_j)
+
+            if row_i is None or column_i is None:
+                continue
+
+            if row_j is None or column_j is None:
+                continue
+
+            if row_i > row_j or (row_i == row_j and column_i > column_j):
+                temp = flight_bookings[i]
+                flight_bookings[i] = flight_bookings[j]
+                flight_bookings[j] = temp
+
     # Display the manifest heading
     print("\n--- Flight Manifest ---")
     print(
@@ -565,7 +639,10 @@ def flight_manifest(flights, passengers, bookings):
             passenger_id = booking["passenger"]
             seat_label = booking["seat"]
 
-            passenger_name = passengers[passenger_id]["name"]
+            if passenger_id in passengers:
+                passenger_name = passengers[passenger_id]["name"]
+            else:
+                passenger_name = "Unknown"
 
             print(
                 booking_id,
@@ -587,7 +664,10 @@ def flight_manifest(flights, passengers, bookings):
 
         for passenger_id in flight["waitlist"]:
 
-            passenger_name = passengers[passenger_id]["name"]
+            if passenger_id in passengers:
+                passenger_name = passengers[passenger_id]["name"]
+            else:
+                passenger_name = "Unknown"
 
             print(
                 position,
@@ -617,21 +697,14 @@ def revenue_report(flights, bookings):
 
         flight = flights[flight_id]
 
-        # Count seats
-        taken, total = seat_counts(flight["seats"])
+        # Calculate revenue and count seats
+        revenue, taken, total = calculate_flight_revenue(flight)
 
         # Calculate occupancy percentage
         if total > 0:
             occupancy = (taken / total) * 100
         else:
             occupancy = 0
-
-        # Calculate revenue for this flight
-        revenue = calculate_flight_revenue(
-            bookings,
-            flight_id,
-            flight["price"]
-        )
 
         # Count people waiting
         waitlisted = len(flight["waitlist"])
@@ -703,7 +776,14 @@ def read_valid_number(prompt, low, high):
             if low <= number <= high:
                 return number
             else:
-                print("Please enter a number between" + str(low) + "and" + str(high) + ".")
+                print(
+                    "Please enter a number between "
+                    + str(low)
+                    + " and "
+                    + str(high)
+                    + "."
+                )
+
         except ValueError:
             print("Invalid input. Please enter a valid number.")
 
@@ -755,21 +835,52 @@ while True:
     choice = read_valid_number("Welcome to SKYLINK. Choose an option (1-9): ", 1, 9)
 
     if choice == 1:
-        add_flight()
+        next_flight_number = add_flight(flights, next_flight_number)
+
     elif choice == 2:
-        register_passenger()
+        passengers, next_passenger_number = register_passenger(
+            passengers,
+            next_passenger_number
+        )
+
     elif choice == 3:
-        render_seat_map()
+        render_seat_map(flights)
+
     elif choice == 4:
-        book_seat()
+        bookings, next_booking_number = book_seat(
+            flights,
+            passengers,
+            bookings,
+            next_booking_number
+        )
+
     elif choice == 5:
-        cancel_booking()
+        bookings, next_booking_number = cancel_booking(
+            flights,
+            passengers,
+            bookings,
+            next_booking_number
+        )
+
     elif choice == 6:
-        change_seat()
+        change_seat(
+            flights,
+            bookings
+        )
+        
     elif choice == 7:
-        flight_manifest()
+        flight_manifest(
+            flights,
+            passengers,
+            bookings
+        )
+
     elif choice == 8:
-        revenue_report()
+        revenue_report(
+            flights,
+            bookings
+        )
+
     elif choice == 9:
         print("Exiting SKYLINK. Goodbye.")
         break
