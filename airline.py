@@ -588,8 +588,15 @@ def revenue_report(flights, bookings):
     return
 
 
-def find_passenger_booking():
-    pass
+# Finds an existing booking for a passenger on a specific flight
+def find_passenger_booking(bookings, passenger_id, flight_id):
+    for booking_id in bookings:
+        booking = bookings[booking_id]
+
+        if booking["passenger"] == passenger_id and booking["flight"] == flight_id:
+            return booking_id
+
+    return None
 
 
 def calculate_flight_revenue():
